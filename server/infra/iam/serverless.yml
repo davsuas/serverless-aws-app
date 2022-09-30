@@ -1,0 +1,60 @@
+service: iam
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+resources:
+  Resources:
+    createAuthChallengeRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Policies:
+          - PolicyName: allow-send-email
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - ses:SendEmail
+                  Resource: "*"
+
+    postAuthenticationRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: allow-set-user-attributes
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - cognito-idp:AdminUpdateUserAttributes
+                  Resource: "*" #due to dependencies I can not use this !GetAtt userPool.Arn, for now set all resources
+  Outputs:
+    CreateAuthChallengeRole:
+      Description: Create Auth Challenge Role ARN
+      Value: !GetAtt createAuthChallengeRole.Arn
+    PostAuthenticationRole:
+      Description: Post Authentication Role ARN
+      Value: !GetAtt postAuthenticationRole.Arn

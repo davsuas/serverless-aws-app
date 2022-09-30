@@ -1,0 +1,32 @@
+{
+  "service": {
+    "id": "4gfa0t4"
+  },
+  "components": {
+    "iam": {
+      "state": {
+        "detectedFrameworkVersion": "3.22.0"
+      },
+      "outputs": {
+        "CreateAuthChallengeRole": "arn:aws:iam::592678682640:role/iam-dev-createAuthChallengeRole-10BTKQ0Y2H7OS",
+        "PostAuthenticationRole": "arn:aws:iam::592678682640:role/iam-dev-postAuthenticationRole-9CQSOVRPY9OA",
+        "ServerlessDeploymentBucketName": "iam-dev-serverlessdeploymentbucket-brlu7zff6tjf"
+      }
+    },
+    "cognito": {
+      "state": {
+        "detectedFrameworkVersion": "3.22.0"
+      },
+      "outputs": {
+        "VerifyAuthChallengeResponseLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:592678682640:function:server-dev-verifyAuthChallengeResponse:5",
+        "UserPoolClientId": "7lvvob3k4okjn4osni66e42plv",
+        "UserPoolId": "us-east-1_3e2wb7TzP",
+        "DefineAuthChallengeLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:592678682640:function:server-dev-defineAuthChallenge:5",
+        "PreSignUpLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:592678682640:function:server-dev-preSignUp:5",
+        "PostAuthenticationLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:592678682640:function:server-dev-postAuthentication:5",
+        "CreateAuthChallengeLambdaFunctionQualifiedArn": "arn:aws:lambda:us-east-1:592678682640:function:server-dev-createAuthChallenge:5",
+        "ServerlessDeploymentBucketName": "server-dev-serverlessdeploymentbucket-9ia3oivbvd"
+      }
+    }
+  }
+}

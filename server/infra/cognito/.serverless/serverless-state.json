@@ -1,0 +1,1066 @@
+{
+  "service": {
+    "service": "server",
+    "serviceObject": {
+      "name": "server"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs14.x",
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "cognito-idp:AdminInitiateAuth",
+                "cognito-idp:AdminCreateUser",
+                "cognito-idp:AdminSetUserPassword",
+                "lambda:InvokeFunction"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      },
+      "stage": "dev",
+      "region": "us-east-1",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "DefineAuthChallengeLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/server-dev-defineAuthChallenge"
+            }
+          },
+          "VerifyAuthChallengeResponseLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/server-dev-verifyAuthChallengeResponse"
+            }
+          },
+          "PreSignUpLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/server-dev-preSignUp"
+            }
+          },
+          "CreateAuthChallengeLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/server-dev-createAuthChallenge"
+            }
+          },
+          "PostAuthenticationLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/server-dev-postAuthentication"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "server",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/server-dev*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/server-dev*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iam\"][\"role\"][\"statements\"][0]"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "server",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "DefineAuthChallengeLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z/defineAuthChallenge.zip"
+              },
+              "Handler": "lambdas/define-auth-challenge.handler",
+              "Runtime": "nodejs14.x",
+              "FunctionName": "server-dev-defineAuthChallenge",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "DefineAuthChallengeLogGroup"
+            ]
+          },
+          "VerifyAuthChallengeResponseLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z/verifyAuthChallengeResponse.zip"
+              },
+              "Handler": "lambdas/verify-auth-challenge-response.handler",
+              "Runtime": "nodejs14.x",
+              "FunctionName": "server-dev-verifyAuthChallengeResponse",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "VerifyAuthChallengeResponseLogGroup"
+            ]
+          },
+          "PreSignUpLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z/preSignUp.zip"
+              },
+              "Handler": "lambdas/pre-sign-up.handler",
+              "Runtime": "nodejs14.x",
+              "FunctionName": "server-dev-preSignUp",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "PreSignUpLogGroup"
+            ]
+          },
+          "CreateAuthChallengeLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z/createAuthChallenge.zip"
+              },
+              "Handler": "lambdas/create-auth-challenge.handler",
+              "Runtime": "nodejs14.x",
+              "FunctionName": "server-dev-createAuthChallenge",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "SES_FROM_ADDRESS": "davsuas@gmail.com"
+                }
+              },
+              "Role": "arn:aws:iam::592678682640:role/iam-dev-createAuthChallengeRole-10BTKQ0Y2H7OS"
+            },
+            "DependsOn": [
+              "CreateAuthChallengeLogGroup"
+            ]
+          },
+          "PostAuthenticationLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z/postAuthentication.zip"
+              },
+              "Handler": "lambdas/post-authentication.handler",
+              "Runtime": "nodejs14.x",
+              "FunctionName": "server-dev-postAuthentication",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": "arn:aws:iam::592678682640:role/iam-dev-postAuthenticationRole-9CQSOVRPY9OA"
+            },
+            "DependsOn": [
+              "PostAuthenticationLogGroup"
+            ]
+          },
+          "DefineAuthChallengeLambdaVersion9juRuwT0yl5KC8DajmEwvl7qpZL26ugZnVZQd3P7N7E": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "DefineAuthChallengeLambdaFunction"
+              },
+              "CodeSha256": "du6inWly7MPh0kFDNB1ajmiyrnBJFE005jydQ5efmb8="
+            }
+          },
+          "VerifyAuthChallengeResponseLambdaVersiond6CdMFAUfRUZQxQ52L7ofpgpLYemUOCRyuECCc2fhQ": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "VerifyAuthChallengeResponseLambdaFunction"
+              },
+              "CodeSha256": "itJ0wA/cM0Du5oHboJ2efiN7Ngl1U5CPdx7HAMXEiyc="
+            }
+          },
+          "PreSignUpLambdaVersionAe0Sw0cxouNMHGZ6f3SZDDRsjQP8imJDKw73JtYA": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "PreSignUpLambdaFunction"
+              },
+              "CodeSha256": "MpGAHWFJ+0JB98MsxzlPrdTVAEV7PdVivnPYoGBSsc0="
+            }
+          },
+          "CreateAuthChallengeLambdaVersioncFfwnoQZB6ucSrntXpjRvKBUZdmjaehVgepkWIu0": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "CreateAuthChallengeLambdaFunction"
+              },
+              "CodeSha256": "+rgPgph+qpsJZsOsNaG9MGMpafeStSjMlLK3ITu3I7c="
+            }
+          },
+          "PostAuthenticationLambdaVersion4xB1HsfrvDh5LwbanHPggQcDMnlIxZH5CgvGlT6IF8": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "PostAuthenticationLambdaFunction"
+              },
+              "CodeSha256": "LD7y4Adov74yAUVokj/jmZYE2DE2MGGkmnQWyr+i8qQ="
+            }
+          },
+          "DefineAuthChallengeCustomCognitoUserPool1": {
+            "Type": "Custom::CognitoUserPool",
+            "Version": 1,
+            "DependsOn": [
+              "DefineAuthChallengeLambdaFunction",
+              "CustomDashresourceDashexistingDashcupLambdaFunction"
+            ],
+            "Properties": {
+              "ServiceToken": {
+                "Fn::GetAtt": [
+                  "CustomDashresourceDashexistingDashcupLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "FunctionName": "server-dev-defineAuthChallenge",
+              "UserPoolName": "test-user-pool",
+              "UserPoolConfigs": [
+                {
+                  "Trigger": "DefineAuthChallenge"
+                }
+              ],
+              "ForceDeploy": 1664511286627
+            }
+          },
+          "VerifyAuthChallengeResponseCustomCognitoUserPool1": {
+            "Type": "Custom::CognitoUserPool",
+            "Version": 1,
+            "DependsOn": [
+              "VerifyAuthChallengeResponseLambdaFunction",
+              "CustomDashresourceDashexistingDashcupLambdaFunction",
+              "DefineAuthChallengeCustomCognitoUserPool1"
+            ],
+            "Properties": {
+              "ServiceToken": {
+                "Fn::GetAtt": [
+                  "CustomDashresourceDashexistingDashcupLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "FunctionName": "server-dev-verifyAuthChallengeResponse",
+              "UserPoolName": "test-user-pool",
+              "UserPoolConfigs": [
+                {
+                  "Trigger": "VerifyAuthChallengeResponse"
+                }
+              ],
+              "ForceDeploy": 1664511286628
+            }
+          },
+          "PreSignUpCustomCognitoUserPool1": {
+            "Type": "Custom::CognitoUserPool",
+            "Version": 1,
+            "DependsOn": [
+              "PreSignUpLambdaFunction",
+              "CustomDashresourceDashexistingDashcupLambdaFunction",
+              "VerifyAuthChallengeResponseCustomCognitoUserPool1"
+            ],
+            "Properties": {
+              "ServiceToken": {
+                "Fn::GetAtt": [
+                  "CustomDashresourceDashexistingDashcupLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "FunctionName": "server-dev-preSignUp",
+              "UserPoolName": "test-user-pool",
+              "UserPoolConfigs": [
+                {
+                  "Trigger": "PreSignUp"
+                }
+              ],
+              "ForceDeploy": 1664511286628
+            }
+          },
+          "CreateAuthChallengeCustomCognitoUserPool1": {
+            "Type": "Custom::CognitoUserPool",
+            "Version": 1,
+            "DependsOn": [
+              "CreateAuthChallengeLambdaFunction",
+              "CustomDashresourceDashexistingDashcupLambdaFunction",
+              "PreSignUpCustomCognitoUserPool1"
+            ],
+            "Properties": {
+              "ServiceToken": {
+                "Fn::GetAtt": [
+                  "CustomDashresourceDashexistingDashcupLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "FunctionName": "server-dev-createAuthChallenge",
+              "UserPoolName": "test-user-pool",
+              "UserPoolConfigs": [
+                {
+                  "Trigger": "CreateAuthChallenge"
+                }
+              ],
+              "ForceDeploy": 1664511286628
+            }
+          },
+          "PostAuthenticationCustomCognitoUserPool1": {
+            "Type": "Custom::CognitoUserPool",
+            "Version": 1,
+            "DependsOn": [
+              "PostAuthenticationLambdaFunction",
+              "CustomDashresourceDashexistingDashcupLambdaFunction",
+              "CreateAuthChallengeCustomCognitoUserPool1"
+            ],
+            "Properties": {
+              "ServiceToken": {
+                "Fn::GetAtt": [
+                  "CustomDashresourceDashexistingDashcupLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "FunctionName": "server-dev-postAuthentication",
+              "UserPoolName": "test-user-pool",
+              "UserPoolConfigs": [
+                {
+                  "Trigger": "PostAuthentication"
+                }
+              ],
+              "ForceDeploy": 1664511286628
+            }
+          },
+          "IamRoleCustomResourcesLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "dev",
+                        "server",
+                        "custom-resources-lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Resource": "*",
+                        "Action": [
+                          "cognito-idp:ListUserPools",
+                          "cognito-idp:DescribeUserPool",
+                          "cognito-idp:UpdateUserPool"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Resource": {
+                          "Fn::Sub": "arn:${AWS::Partition}:lambda:*:*:function:server-dev-defineAuthChallenge"
+                        },
+                        "Action": [
+                          "lambda:AddPermission",
+                          "lambda:RemovePermission"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Resource": {
+                          "Fn::Sub": "arn:${AWS::Partition}:lambda:*:*:function:server-dev-verifyAuthChallengeResponse"
+                        },
+                        "Action": [
+                          "lambda:AddPermission",
+                          "lambda:RemovePermission"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Resource": {
+                          "Fn::Sub": "arn:${AWS::Partition}:lambda:*:*:function:server-dev-preSignUp"
+                        },
+                        "Action": [
+                          "lambda:AddPermission",
+                          "lambda:RemovePermission"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Resource": {
+                          "Fn::Sub": "arn:${AWS::Partition}:lambda:*:*:function:server-dev-createAuthChallenge"
+                        },
+                        "Action": [
+                          "lambda:AddPermission",
+                          "lambda:RemovePermission"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Resource": {
+                          "Fn::Sub": "arn:${AWS::Partition}:lambda:*:*:function:server-dev-postAuthentication"
+                        },
+                        "Action": [
+                          "lambda:AddPermission",
+                          "lambda:RemovePermission"
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Resource": {
+                          "Fn::Sub": "arn:${AWS::Partition}:iam::*:role/*"
+                        },
+                        "Action": [
+                          "iam:PassRole"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          "CustomDashresourceDashexistingDashcupLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z/custom-resources.zip"
+              },
+              "FunctionName": "server-dev-custom-resource-existing-cup",
+              "Handler": "cognito-user-pool/handler.handler",
+              "MemorySize": 1024,
+              "Runtime": "nodejs14.x",
+              "Timeout": 180,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleCustomResourcesLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "IamRoleCustomResourcesLambdaExecution"
+            ]
+          },
+          "userPool": {
+            "Type": "AWS::Cognito::UserPool",
+            "Properties": {
+              "UserPoolName": "test-user-pool",
+              "Schema": [
+                {
+                  "Name": "name",
+                  "AttributeDataType": "String",
+                  "Mutable": true,
+                  "Required": true
+                },
+                {
+                  "Name": "email",
+                  "AttributeDataType": "String",
+                  "Mutable": true,
+                  "Required": true
+                }
+              ],
+              "Policies": {
+                "PasswordPolicy": {
+                  "MinimumLength": 8,
+                  "RequireLowercase": false,
+                  "RequireNumbers": false,
+                  "RequireSymbols": false,
+                  "RequireUppercase": false
+                }
+              },
+              "UsernameAttributes": [
+                "email"
+              ],
+              "MfaConfiguration": "OFF"
+            }
+          },
+          "userPoolClient": {
+            "Type": "AWS::Cognito::UserPoolClient",
+            "Properties": {
+              "ClientName": "email-auth-client",
+              "GenerateSecret": false,
+              "UserPoolId": {
+                "Ref": "userPool"
+              },
+              "ExplicitAuthFlows": [
+                "CUSTOM_AUTH_FLOW_ONLY"
+              ]
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            },
+            "Export": {
+              "Name": "sls-server-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "DefineAuthChallengeLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "DefineAuthChallengeLambdaVersion9juRuwT0yl5KC8DajmEwvl7qpZL26ugZnVZQd3P7N7E"
+            },
+            "Export": {
+              "Name": "sls-server-dev-DefineAuthChallengeLambdaFunctionQualifiedArn"
+            }
+          },
+          "VerifyAuthChallengeResponseLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "VerifyAuthChallengeResponseLambdaVersiond6CdMFAUfRUZQxQ52L7ofpgpLYemUOCRyuECCc2fhQ"
+            },
+            "Export": {
+              "Name": "sls-server-dev-VerifyAuthChallengeResponseLambdaFunctionQualifiedArn"
+            }
+          },
+          "PreSignUpLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "PreSignUpLambdaVersionAe0Sw0cxouNMHGZ6f3SZDDRsjQP8imJDKw73JtYA"
+            },
+            "Export": {
+              "Name": "sls-server-dev-PreSignUpLambdaFunctionQualifiedArn"
+            }
+          },
+          "CreateAuthChallengeLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "CreateAuthChallengeLambdaVersioncFfwnoQZB6ucSrntXpjRvKBUZdmjaehVgepkWIu0"
+            },
+            "Export": {
+              "Name": "sls-server-dev-CreateAuthChallengeLambdaFunctionQualifiedArn"
+            }
+          },
+          "PostAuthenticationLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "PostAuthenticationLambdaVersion4xB1HsfrvDh5LwbanHPggQcDMnlIxZH5CgvGlT6IF8"
+            },
+            "Export": {
+              "Name": "sls-server-dev-PostAuthenticationLambdaFunctionQualifiedArn"
+            }
+          },
+          "UserPoolId": {
+            "Description": "ID of the User Pool",
+            "Value": {
+              "Ref": "userPool"
+            }
+          },
+          "UserPoolClientId": {
+            "Description": "ID of the User Pool Client",
+            "Value": {
+              "Ref": "userPoolClient"
+            }
+          }
+        }
+      },
+      "coreCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ServerlessDeploymentBucket": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "ServerlessDeploymentBucketPolicy": {
+            "Type": "AWS::S3::BucketPolicy",
+            "Properties": {
+              "Bucket": {
+                "Ref": "ServerlessDeploymentBucket"
+              },
+              "PolicyDocument": {
+                "Statement": [
+                  {
+                    "Action": "s3:*",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Resource": [
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            },
+                            "/*"
+                          ]
+                        ]
+                      },
+                      {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:",
+                            {
+                              "Ref": "AWS::Partition"
+                            },
+                            ":s3:::",
+                            {
+                              "Ref": "ServerlessDeploymentBucket"
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "Condition": {
+                      "Bool": {
+                        "aws:SecureTransport": false
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": {
+              "Ref": "ServerlessDeploymentBucket"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "custom": {
+      "webpack": {
+        "webpackConfig": "webpack.config.js",
+        "includeModules": {
+          "forceExclude": [
+            "aws-sdk"
+          ]
+        }
+      }
+    },
+    "plugins": [
+      "serverless-webpack"
+    ],
+    "pluginsData": {},
+    "functions": {
+      "defineAuthChallenge": {
+        "handler": "lambdas/define-auth-challenge.handler",
+        "events": [
+          {
+            "cognitoUserPool": {
+              "pool": "test-user-pool",
+              "trigger": "DefineAuthChallenge",
+              "existing": true,
+              "forceDeploy": true
+            }
+          }
+        ],
+        "name": "server-dev-defineAuthChallenge",
+        "package": {
+          "artifact": ".serverless/defineAuthChallenge.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs14.x",
+        "vpc": {},
+        "versionLogicalId": "DefineAuthChallengeLambdaVersion9juRuwT0yl5KC8DajmEwvl7qpZL26ugZnVZQd3P7N7E"
+      },
+      "verifyAuthChallengeResponse": {
+        "handler": "lambdas/verify-auth-challenge-response.handler",
+        "events": [
+          {
+            "cognitoUserPool": {
+              "pool": "test-user-pool",
+              "trigger": "VerifyAuthChallengeResponse",
+              "existing": true,
+              "forceDeploy": true
+            }
+          }
+        ],
+        "name": "server-dev-verifyAuthChallengeResponse",
+        "package": {
+          "artifact": ".serverless/verifyAuthChallengeResponse.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs14.x",
+        "vpc": {},
+        "versionLogicalId": "VerifyAuthChallengeResponseLambdaVersiond6CdMFAUfRUZQxQ52L7ofpgpLYemUOCRyuECCc2fhQ"
+      },
+      "preSignUp": {
+        "handler": "lambdas/pre-sign-up.handler",
+        "events": [
+          {
+            "cognitoUserPool": {
+              "pool": "test-user-pool",
+              "trigger": "PreSignUp",
+              "existing": true,
+              "forceDeploy": true
+            }
+          }
+        ],
+        "name": "server-dev-preSignUp",
+        "package": {
+          "artifact": ".serverless/preSignUp.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs14.x",
+        "vpc": {},
+        "versionLogicalId": "PreSignUpLambdaVersionAe0Sw0cxouNMHGZ6f3SZDDRsjQP8imJDKw73JtYA"
+      },
+      "createAuthChallenge": {
+        "handler": "lambdas/create-auth-challenge.handler",
+        "environment": {
+          "SES_FROM_ADDRESS": "davsuas@gmail.com"
+        },
+        "role": "arn:aws:iam::592678682640:role/iam-dev-createAuthChallengeRole-10BTKQ0Y2H7OS",
+        "events": [
+          {
+            "cognitoUserPool": {
+              "pool": "test-user-pool",
+              "trigger": "CreateAuthChallenge",
+              "existing": true,
+              "forceDeploy": true
+            }
+          }
+        ],
+        "name": "server-dev-createAuthChallenge",
+        "package": {
+          "artifact": ".serverless/createAuthChallenge.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs14.x",
+        "vpc": {},
+        "versionLogicalId": "CreateAuthChallengeLambdaVersioncFfwnoQZB6ucSrntXpjRvKBUZdmjaehVgepkWIu0"
+      },
+      "postAuthentication": {
+        "handler": "lambdas/post-authentication.handler",
+        "role": "arn:aws:iam::592678682640:role/iam-dev-postAuthenticationRole-9CQSOVRPY9OA",
+        "events": [
+          {
+            "cognitoUserPool": {
+              "pool": "test-user-pool",
+              "trigger": "PostAuthentication",
+              "existing": true,
+              "forceDeploy": true
+            }
+          }
+        ],
+        "name": "server-dev-postAuthentication",
+        "package": {
+          "artifact": ".serverless/postAuthentication.zip"
+        },
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs14.x",
+        "vpc": {},
+        "versionLogicalId": "PostAuthenticationLambdaVersion4xB1HsfrvDh5LwbanHPggQcDMnlIxZH5CgvGlT6IF8"
+      }
+    },
+    "resources": {
+      "Resources": {
+        "userPool": {
+          "Type": "AWS::Cognito::UserPool",
+          "Properties": {
+            "UserPoolName": "test-user-pool",
+            "Schema": [
+              {
+                "Name": "name",
+                "AttributeDataType": "String",
+                "Mutable": true,
+                "Required": true
+              },
+              {
+                "Name": "email",
+                "AttributeDataType": "String",
+                "Mutable": true,
+                "Required": true
+              }
+            ],
+            "Policies": {
+              "PasswordPolicy": {
+                "MinimumLength": 8,
+                "RequireLowercase": false,
+                "RequireNumbers": false,
+                "RequireSymbols": false,
+                "RequireUppercase": false
+              }
+            },
+            "UsernameAttributes": [
+              "email"
+            ],
+            "MfaConfiguration": "OFF"
+          }
+        },
+        "userPoolClient": {
+          "Type": "AWS::Cognito::UserPoolClient",
+          "Properties": {
+            "ClientName": "email-auth-client",
+            "GenerateSecret": false,
+            "UserPoolId": {
+              "Ref": "userPool"
+            },
+            "ExplicitAuthFlows": [
+              "CUSTOM_AUTH_FLOW_ONLY"
+            ]
+          }
+        }
+      },
+      "Outputs": {
+        "UserPoolId": {
+          "Description": "ID of the User Pool",
+          "Value": {
+            "Ref": "userPool"
+          }
+        },
+        "UserPoolClientId": {
+          "Description": "ID of the User Pool Client",
+          "Value": {
+            "Ref": "userPoolClient"
+          }
+        }
+      }
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless.yml",
+    "initialServerlessConfig": {
+      "service": "server",
+      "package": {
+        "individually": true,
+        "artifactsS3KeyDirname": "serverless/server/dev/code-artifacts",
+        "artifactDirectoryName": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z"
+      },
+      "plugins": {
+        "$ref": "$[\"service\"][\"plugins\"]"
+      },
+      "custom": {
+        "$ref": "$[\"service\"][\"custom\"]"
+      },
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      },
+      "resources": {
+        "$ref": "$[\"service\"][\"resources\"]"
+      }
+    },
+    "layers": {},
+    "isDashboardMonitoringPreconfigured": false
+  },
+  "package": {
+    "individually": true,
+    "artifactDirectoryName": "serverless/server/dev/1664511286585-2022-09-30T04:14:46.585Z",
+    "artifact": ""
+  }
+}

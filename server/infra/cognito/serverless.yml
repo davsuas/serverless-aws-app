@@ -1,0 +1,127 @@
+service: server
+
+package:
+  individually: true
+
+plugins:
+  - serverless-webpack
+	
+custom:
+  webpack:
+    webpackConfig: 'webpack.config.js'
+    includeModules:
+      forceExclude:
+        - aws-sdk
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+            - lambda:InvokeFunction
+          Resource: "*"
+
+functions:
+  defineAuthChallenge:
+    handler: lambdas/define-auth-challenge.handler
+    events:
+      - cognitoUserPool:
+          pool: ${env:USER_POOL_NAME}
+          trigger: DefineAuthChallenge
+          existing: true
+          forceDeploy: true
+
+  verifyAuthChallengeResponse:
+    handler: lambdas/verify-auth-challenge-response.handler
+    events:
+      - cognitoUserPool:
+          pool: ${env:USER_POOL_NAME}
+          trigger: VerifyAuthChallengeResponse
+          existing: true
+          forceDeploy: true
+  
+  preSignUp:
+    handler: lambdas/pre-sign-up.handler
+    events:
+      - cognitoUserPool:
+          pool: ${env:USER_POOL_NAME}
+          trigger: PreSignUp
+          existing: true
+          forceDeploy: true
+
+  createAuthChallenge:
+    handler: lambdas/create-auth-challenge.handler
+    environment:
+      SES_FROM_ADDRESS: ${env:SES_FROM_ADDRESS}
+    role: ${param:createAuthChallengeRole}
+    events:
+      - cognitoUserPool:
+          pool: ${env:USER_POOL_NAME}
+          trigger: CreateAuthChallenge
+          existing: true
+          forceDeploy: true
+
+  postAuthentication:
+    handler: lambdas/post-authentication.handler
+    role: ${param:postAuthenticationRole}
+    events:
+      - cognitoUserPool:
+          pool: ${env:USER_POOL_NAME}
+          trigger: PostAuthentication
+          existing: true
+          forceDeploy: true
+
+resources:
+  Resources:
+    userPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        UserPoolName: ${env:USER_POOL_NAME}
+        Schema:
+          - Name: name
+            AttributeDataType: String
+            Mutable: true
+            Required: true
+          - Name: email
+            AttributeDataType: String
+            Mutable: true
+            Required: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: false
+            RequireNumbers: false
+            RequireSymbols: false
+            RequireUppercase: false
+        UsernameAttributes:
+          - email
+        MfaConfiguration: "OFF"
+        #LambdaConfig:
+          #CreateAuthChallenge: !GetAtt createAuthChallenge.Arn
+          #DefineAuthChallenge: !GetAtt defineAuthChallenge.Arn
+          #PreSignUp: !GetAtt preSignUp.Arn
+          #VerifyAuthChallengeResponse: !GetAtt verifyAuthChallengeResponse.Arn
+          #PostAuthentication: !GetAtt postAuthentication.Arn
+
+    userPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        ClientName: email-auth-client
+        GenerateSecret: false
+        UserPoolId: !Ref userPool
+        ExplicitAuthFlows:
+          - CUSTOM_AUTH_FLOW_ONLY
+
+  Outputs:
+    UserPoolId:
+      Description: ID of the User Pool
+      Value: !Ref userPool
+    UserPoolClientId:
+      Description: ID of the User Pool Client
+      Value: !Ref userPoolClient

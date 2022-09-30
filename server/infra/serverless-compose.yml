@@ -1,0 +1,13 @@
+# serverless-compose.yml
+services:
+ 
+  iam:
+    path: iam
+ 
+  cognito:
+    path: cognito
+    dependsOn:
+      - iam
+    params:
+      createAuthChallengeRole: ${iam.CreateAuthChallengeRole}
+      postAuthenticationRole: ${iam.PostAuthenticationRole}
